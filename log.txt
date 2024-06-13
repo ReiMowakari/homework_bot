@@ -1,0 +1,14 @@
+2024-06-13 16:44:58,695:CRITICAL:main:72 - Отсутствует обязательная переменная окружения: TELEGRAM_CHAT_ID
+2024-06-13 16:49:10,144:CRITICAL:main:72 - Отсутствует обязательная переменная окружения: TELEGRAM_TOKEN
+2024-06-13 16:49:29,765:CRITICAL:main:72 - Отсутствует обязательная переменная окружения: PRACTICUM_TOKEN
+2024-06-13 17:04:05,555:ERROR:get_api_answer:56 - Сбой в работе программы: Эндпоинт недоступен. Код ответа API: 404
+2024-06-13 17:06:05,903:ERROR:get_api_answer:56 - 404
+2024-06-13 17:06:26,560:ERROR:get_api_answer:56 - https://practicum.yandex.ru/api/user_api/homework_statuse/?from_date=1718287586
+2024-06-13 17:07:51,234:ERROR:get_api_answer:56 - Not Found
+2024-06-13 17:09:58,657:ERROR:get_api_answer:56 - Сбой в работе программы: Эндпоинт https://practicum.yandex.ru/api/user_api/homework_statuse/?from_date=1718287798 недоступен по причине Not Found 404
+2024-06-13 17:18:55,125:ERROR:check_response:67 - Ошибка в типе ответа API, ожидается словарь - получен: 
+2024-06-13 17:19:35,928:ERROR:check_response:67 - Ошибка в типе ответа API, ожидается словарь - получен: <class 'dict'>
+2024-06-13 17:24:11,624:ERROR:check_response:72 - Ошибка в ответе API, отсутствует ключ - curren_date
+2024-06-13 18:03:36,608:ERROR:get_api_answer:61 - Сбой в работе программы: Эндпоинт https://practicum.yandex.ru/api/user_api/homework_statuse/?from_date=1718291016 недоступен по причине Not Found 404
+2024-06-13 18:20:50,410:ERROR:get_api_answer:62 - Сбой в работе программы: Эндпоинт https://practicum.yandex.ru/api/user_api/homework_statuse/?from_date=1718292050 недоступен по причине Not Found 404
+2024-06-13 18:25:34,172:ERROR:get_api_answer:62 - Сбой в работе программы: Эндпоинт https://practicum.yandex.ru/api/user_api/homework_statuse/?from_date=1718292334 недоступен по причине Not Found 404
