@@ -4,7 +4,6 @@ import time
 import requests
 import os
 
-
 from telebot import TeleBot
 from dotenv import load_dotenv
 from http import HTTPStatus
@@ -25,23 +24,45 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+# Настройки логирования.
+logging.basicConfig(
+    level=logging.INFO,
+    filename='log.txt',
+    filemode='a',
+    format='%(asctime)s:%(levelname)s:%(funcName)s:%(lineno)d - %(message)s',
+    encoding='utf-8'
+)
+logger = logging.getLogger(__name__)
+logger.addHandler(
+    logging.StreamHandler(),
+)
+
 
 def check_tokens():
-    """
-    Проверяет доступность переменных окружения.
-    :return: True если все переменные доступны,
-    False и недоступная переменная в противном случае.
-    """
-    required_env_vars = ['PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']
-    for var in required_env_vars:
-        if not os.getenv(var):
-            return False, var
-    else:
-        return True,
+    """Функция проверки наличия токенов."""
+    no_tokens_msg = (
+        'Программа принудительно остановлена. '
+        'Отсутствует обязательная переменная окружения: ')
+    tokens_bool = True
+    required_tokens = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+    for token in required_tokens:
+        if token is None:
+            tokens_bool = False
+            logger.critical(
+                f'{no_tokens_msg} {token}')
+    return tokens_bool
 
 
 def send_message(bot, message):
-    pass
+    """Функция отправки сообщения в бот."""
+    try:
+        bot.send_message(
+            chat_id=TELEGRAM_CHAT_ID,
+            text=message
+        )
+        logger.debug(f'Сообщение отправлено: {message}')
+    except Exception as error:
+        logger.error(f'Возникла ошибка при отправке сообщения: {error}')
 
 
 def get_api_answer(timestamp):
@@ -75,58 +96,72 @@ def check_response(response):
     :return: список домашних работ.
     """
     if not isinstance(response, dict):
-        logger.error(f'Ошибка в типе ответа API, '
-                     f'ожидается словарь - получен: {type(response)}')
+        raise TypeError(f'Ошибка в типе ответа API, '
+                        f'ожидается словарь - получен: {type(response)}')
     required_keys = ('homeworks', 'current_date')
     for key in required_keys:
         if key not in response.keys():
-            logger.error(f'Ошибка в ответе API, отсутствует ключ - {key}')
-    else:
-        return response.get('homeworks')
+            raise KeyError(f'Ошибка в ответе API, отсутствует ключ - {key}')
+    homeworks = response.get('homeworks')
+    if not isinstance(homeworks, list):
+        raise TypeError('Homeworks не является списком')
+    return homeworks
 
 
 def parse_status(homework):
-    pass
-
-    #return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    """
+    Функция извлекает из информации о конкретной домашней работе статус этой работы
+    :param homework: принимает конкретную домашнюю работу
+    :return: статус работы из словаря HOMEWORK_VERDICTS
+    """
+    # Если работа по ключу не найдена.
+    if 'homework_name' not in homework:
+        raise KeyError('В ответе от API отсутствует необходимый ключ.')
+    # Получаем название работы по ключу.
+    homework_name = homework.get('homework_name')
+    # Получаем статус работы.
+    homework_status = homework.get('status')
+    if homework_status not in HOMEWORK_VERDICTS:
+        raise AssertionError(f'Получен неизвестный статус работы {homework_status}')
+    verdict = HOMEWORK_VERDICTS[homework_status]
+    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def main():
     """Основная логика работы бота."""
+    # Создаем объект класса бота.
+    bot = TeleBot(token=TELEGRAM_TOKEN)
     # Проверяем, что все переменные есть,
     # иначе ошибка с названием отсутствующей переменной.
-    if not check_tokens()[0]:
-        logger.critical(
-            f'Отсутствует обязательная переменная окружения: {check_tokens()[1]}')
-        sys.exit('Программа принудительно остановлена!')
-
-    # Создаем объект класса бота.
-    bot = TeleBot(token='TELEGRAM_TOKEN')
+    if not check_tokens():
+        exit('Программа принудительно остановлена!')
+    else:
+        # Инициализация бота.
+        send_message(bot, message='Я начал свою работу!')
     # Текущее время.
     current_timestamp = int(time.time())
-    chat_id = TELEGRAM_CHAT_ID
+    # Добавляем промежуточный статус работы.
+    middle_status = 'reviewing'
     while True:
         try:
+            # Запрашиваем данные через API с текущем временем
             response = get_api_answer(current_timestamp)
-            print(response)
-            current_timestamp = response.get(
-                'current_data', current_timestamp)
-            print(current_timestamp)
-            check_response(get_api_answer(current_timestamp))
+            # Проверяем ответ API на корректность и наличие новых работ.
+            new_homework = check_response(response)
+            # Если новая работа есть и статус,
+            # отличный от "в работе" отправляем сообщение.
+            if new_homework and middle_status != new_homework[0]['status']:
+                message = parse_status(new_homework[0])
+                send_message(bot, message)
+                middle_status = new_homework[0]['status']
+            # Если статус не менялся
+            logger.debug('Статус домашней работы не изменился.')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            print(message)
+            logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
-    # Создаем и настраиваем логер.
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    handler = logging.FileHandler('log.txt', 'a', 'UTF-8')
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s:%(levelname)s:%(funcName)s:%(lineno)d - %(message)s'
-    ))
-    logger.addHandler(handler)
     main()
