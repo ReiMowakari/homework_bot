@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 import requests
 import os
@@ -110,7 +109,8 @@ def check_response(response):
 
 def parse_status(homework):
     """
-    Функция извлекает из информации о конкретной домашней работе статус этой работы
+    Функция извлекает из информации о
+    конкретной домашней работе статус этой работы.
     :param homework: принимает конкретную домашнюю работу
     :return: статус работы из словаря HOMEWORK_VERDICTS
     """
@@ -122,7 +122,8 @@ def parse_status(homework):
     # Получаем статус работы.
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
-        raise AssertionError(f'Получен неизвестный статус работы {homework_status}')
+        raise AssertionError(f'Получен неизвестный статус работы'
+                             f' {homework_status}')
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
