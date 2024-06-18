@@ -3,7 +3,7 @@ import time
 import requests
 import os
 
-from telebot import TeleBot
+from telebot import TeleBot, apihelper
 from dotenv import load_dotenv
 from http import HTTPStatus
 
@@ -60,7 +60,7 @@ def send_message(bot, message):
             text=message
         )
         logger.debug(f'Сообщение отправлено: {message}')
-    except Exception as error:
+    except apihelper.ApiException as error:
         logger.error(f'Возникла ошибка при отправке сообщения: {error}')
 
 
@@ -78,14 +78,19 @@ def get_api_answer(timestamp):
     }
     try:
         get_api_homeworks = requests.get(**params_to_call)
-        if get_api_homeworks.status_code != HTTPStatus.OK:
-            raise logger.error(
+        get_api_status = get_api_homeworks.status_code
+        if get_api_status != HTTPStatus.OK:
+            message = (
                 f'Сбой в работе программы: Эндпоинт {get_api_homeworks.url} '
                 f'недоступен по причине {get_api_homeworks.reason} '
-                f'{get_api_homeworks.status_code}')
+                f'{get_api_homeworks.status_code}'
+            )
+            send_message(bot=TeleBot(token=TELEGRAM_TOKEN), message=message)
+            raise logger.error(message)
         return get_api_homeworks.json()
     except requests.RequestException as re:
         logger.error(re)
+        send_message(bot=TeleBot(token=TELEGRAM_TOKEN), message=re)
 
 
 def check_response(response):
@@ -95,7 +100,7 @@ def check_response(response):
     :return: список домашних работ.
     """
     if not isinstance(response, dict):
-        raise TypeError(f'Ошибка в типе ответа API, '
+        raise TypeError('Ошибка в типе ответа API, '
                         f'ожидается словарь - получен: {type(response)}')
     required_keys = ('homeworks', 'current_date')
     for key in required_keys:
@@ -122,7 +127,7 @@ def parse_status(homework):
     # Получаем статус работы.
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
-        raise AssertionError(f'Получен неизвестный статус работы'
+        raise AssertionError('Получен неизвестный статус работы'
                              f' {homework_status}')
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
