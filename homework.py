@@ -77,20 +77,19 @@ def get_api_answer(timestamp):
         'params': {'from_date': timestamp}
     }
     try:
+        # Если удалить блок проверки статуса -
+        # ругается тест test_get_not_200_status_response.
         get_api_homeworks = requests.get(**params_to_call)
-        get_api_status = get_api_homeworks.status_code
-        if get_api_status != HTTPStatus.OK:
+        if get_api_homeworks.status_code != HTTPStatus.OK:
             message = (
                 f'Сбой в работе программы: Эндпоинт {get_api_homeworks.url} '
                 f'недоступен по причине {get_api_homeworks.reason} '
                 f'{get_api_homeworks.status_code}'
             )
-            send_message(bot=TeleBot(token=TELEGRAM_TOKEN), message=message)
-            raise logger.error(message)
+            return message
         return get_api_homeworks.json()
     except requests.RequestException as re:
         logger.error(re)
-        send_message(bot=TeleBot(token=TELEGRAM_TOKEN), message=re)
 
 
 def check_response(response):
@@ -165,6 +164,7 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
+            send_message(bot, message)
         finally:
             time.sleep(RETRY_PERIOD)
 
