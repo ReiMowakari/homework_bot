@@ -77,19 +77,18 @@ def get_api_answer(timestamp):
         'params': {'from_date': timestamp}
     }
     try:
-        # Если удалить блок проверки статуса -
-        # ругается тест test_get_not_200_status_response.
         get_api_homeworks = requests.get(**params_to_call)
-        if get_api_homeworks.status_code != HTTPStatus.OK:
-            message = (
-                f'Сбой в работе программы: Эндпоинт {get_api_homeworks.url} '
-                f'недоступен по причине {get_api_homeworks.reason} '
-                f'{get_api_homeworks.status_code}'
-            )
-            return message
-        return get_api_homeworks.json()
     except requests.RequestException as re:
         logger.error(re)
+        raise Exception(f'Ошибка получение запроса от API Yandex {re}') from re
+    if get_api_homeworks.status_code != HTTPStatus.OK:
+        message = (
+            f'Сбой в работе программы: Эндпоинт {get_api_homeworks.url} '
+            f'недоступен по причине {get_api_homeworks.reason} '
+            f'{get_api_homeworks.status_code}'
+        )
+        return message
+    return get_api_homeworks.json()
 
 
 def check_response(response):
@@ -147,6 +146,8 @@ def main():
     current_timestamp = int(time.time())
     # Добавляем промежуточный статус работы.
     middle_status = 'reviewing'
+    # Добавляем переменную для хранения последней ошибки.
+    last_message_error = None
     while True:
         try:
             # Запрашиваем данные через API с текущем временем
@@ -164,7 +165,10 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            send_message(bot, message)
+            # Добавляем проверку на избежание дублей.
+            if last_message_error != message:
+                send_message(bot, message)
+                last_message_error = message
         finally:
             time.sleep(RETRY_PERIOD)
 
