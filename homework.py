@@ -60,8 +60,12 @@ def send_message(bot, message):
             text=message
         )
         logger.debug(f'Сообщение отправлено: {message}')
+        # Возвращаем булевое значение, что сообщение отправлено.
+        return True
     except apihelper.ApiException as error:
         logger.error(f'Возникла ошибка при отправке сообщения: {error}')
+        # Возвращаем булевое значение, если сообщение не отправлено.
+        return False
 
 
 def get_api_answer(timestamp):
@@ -139,9 +143,6 @@ def main():
     # иначе ошибка с названием отсутствующей переменной.
     if not check_tokens():
         exit('Программа принудительно остановлена!')
-    else:
-        # Инициализация бота.
-        send_message(bot, message='Я начал свою работу!')
     # Текущее время.
     current_timestamp = int(time.time())
     # Добавляем промежуточный статус работы.
@@ -166,7 +167,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
             # Добавляем проверку на избежание дублей.
-            if last_message_error != message:
+            if last_message_error != message and not send_message(bot, message):
                 send_message(bot, message)
                 last_message_error = message
         finally:
