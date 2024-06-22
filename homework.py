@@ -64,8 +64,6 @@ def send_message(bot, message):
         return True
     except apihelper.ApiException as error:
         logger.error(f'Возникла ошибка при отправке сообщения: {error}')
-        # Возвращаем булевое значение, если сообщение не отправлено.
-        return False
 
 
 def get_api_answer(timestamp):
@@ -167,9 +165,13 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
             # Добавляем проверку на избежание дублей.
-            if last_message_error != message and not send_message(bot, message):
-                send_message(bot, message)
-                last_message_error = message
+            if last_message_error != message:
+                # Сохраняем результат функции.
+                result = send_message(bot, message)
+                # Если сообщение отправлено - перезаписываем текст ошибки.
+                if result:
+                    send_message(bot, message)
+                    last_message_error = message
         finally:
             time.sleep(RETRY_PERIOD)
 
