@@ -169,7 +169,7 @@ def main():
                 # Сохраняем результат функции.
                 result = send_message(bot, message)
                 # Если сообщение отправлено - перезаписываем текст ошибки.
-                if result:
+                if not result:
                     send_message(bot, message)
                     last_message_error = message
         finally:
