@@ -169,8 +169,7 @@ def main():
                 # Сохраняем результат функции.
                 result = send_message(bot, message)
                 # Если сообщение отправлено - перезаписываем текст ошибки.
-                if not result:
-                    send_message(bot, message)
+                if result:
                     last_message_error = message
         finally:
             time.sleep(RETRY_PERIOD)
